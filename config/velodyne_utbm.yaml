@@ -1,6 +1,6 @@
 common:
     dataset: "utbm"
-    lid_topic:  "/velodyne_points"
+    lid_topic:  "/hdl32e_left/velodyne_points"
     imu_topic:  "/imu/data"
     time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
     
@@ -24,16 +24,16 @@ mapping:
                    0, 0, 1]
 
 publish:
-    path_publish_en:  false
-    scan_publish_en:  true       # false: close all the point cloud output
+    path_publish_en:  true
+    scan_publish_en:  false       # false: close all the point cloud output
     scan_effect_pub_en: true    # true: publish the pointscloud of effect point
     dense_publish_en: false       # false: low down the points number in a global-frame point clouds scan.
     scan_bodyframe_pub_en: true  # true: output the point cloud scans in IMU-body-frame
 
-path_save_en: true                 # 保存轨迹，用于精度计算和比较
+path_save_en: false                 # 保存轨迹，用于精度计算和比较
 
 pcd_save:
-    pcd_save_en: true
+    pcd_save_en: false
     interval: -1                 # how many LiDAR frames saved in each pcd file; 
                                  # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
 

@@ -1,12 +1,12 @@
 common:
-  dataset: "nclt"
-  lid_topic: "points_raw"
+  dataset: "kitti"
+  lid_topic: "velodyne_points"
   imu_topic: "imu_raw"
   time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
 
 preprocess:
   lidar_type: 2                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR,
-  scan_line: 32
+  scan_line: 64
   blind: 4
   time_scale: 1e-3             # 兼容不同数据集的时间单位，仅对Velodyne LiDAR(lidar_type=2)生效
 
@@ -17,14 +17,18 @@ mapping:
   b_gyr_cov: 0.0001
   fov_degree: 180
   det_range: 100.0
-  extrinsic_est_en: true      # true: enable the online estimation of IMU-LiDAR extrinsic
-  extrinsic_T: [ 0, 0, 0.28 ]
-  extrinsic_R: [ 1, 0, 0,
-                 0, 1, 0,
-                 0, 0, 1 ]
+  extrinsic_est_en: false      # true: enable the online estimation of IMU-LiDAR extrinsic
+  # extrinsic_T: [-0.8086759, 0.3195559, -0.7997231]
+  # extrinsic_R: [ 0.9999976, 0.0007553071, -0.002035826,
+  #             -0.0007854027, 0.9998898, -0.01482298,
+  #                 0.002024406, 0.01482454, 0.9998881 ]    
+  extrinsic_T: [-0.8086759, 0.3195559, -0.7997231]
+  extrinsic_R: [ 0.9999976, 0.0007553071, -0.002035826,
+              -0.0007854027, 0.9998898, -0.01482298,
+                  0.002024406, 0.01482454, 0.9998881 ]   
 
 publish:
-  path_publish_en: false
+  path_publish_en: true
   scan_publish_en: true       # false: close all the point cloud output
   scan_effect_pub_en: true    # true: publish the pointscloud of effect point
   dense_publish_en: false       # false: low down the points number in a global-frame point clouds scan.
@@ -33,7 +37,7 @@ publish:
 path_save_en: true                 # 保存轨迹，用于精度计算和比较
 
 pcd_save:
-  pcd_save_en: true
+  pcd_save_en: false
   interval: -1                 # how many LiDAR frames saved in each pcd file;
   # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
 

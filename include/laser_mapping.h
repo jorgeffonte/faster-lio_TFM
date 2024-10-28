@@ -6,6 +6,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <std_msgs/Float64.h>
 #include <condition_variable>
 #include <thread>
 
@@ -56,6 +57,7 @@ class LaserMapping {
     ////////////////////////////// debug save / show ////////////////////////////////////////////////////////////////
     void PublishPath(const ros::Publisher pub_path);
     void PublishOdometry(const ros::Publisher &pub_odom_aft_mapped);
+    void PublishCompTime(const ros::Publisher &pub_odom_aft_mapped,float time);
     void PublishFrameWorld();
     void PublishFrameBody(const ros::Publisher &pub_laser_cloud_body);
     void PublishFrameEffectWorld(const ros::Publisher &pub_laser_cloud_effect_world);
@@ -92,7 +94,11 @@ class LaserMapping {
     double cube_len_ = 0;
     double filter_size_map_min_ = 0;
     bool localmap_initialized_ = false;
-
+    std::vector<double> comp_times;
+    double then_;
+    double total_time =0;
+    int total_frame=0;
+    double avg_comp_time;
     /// params
     std::vector<double> extrinT_{3, 0.0};  // lidar-imu translation
     std::vector<double> extrinR_{9, 0.0};  // lidar-imu rotation
@@ -117,6 +123,7 @@ class LaserMapping {
     ros::Publisher pub_laser_cloud_body_;
     ros::Publisher pub_laser_cloud_effect_world_;
     ros::Publisher pub_odom_aft_mapped_;
+    ros::Publisher pub_comp_time_;
     ros::Publisher pub_path_;
     std::string tf_imu_frame_;
     std::string tf_world_frame_;

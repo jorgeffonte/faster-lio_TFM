@@ -105,7 +105,12 @@ bool LaserMapping::LoadParams(ros::NodeHandle &nh) {
     } else if (lidar_type == 3) {
         preprocess_->SetLidarType(LidarType::OUST64);
         LOG(INFO) << "Using OUST 64 Lidar";
-    } else {
+    }
+    else if(lidar_type == 4){
+        preprocess_->SetLidarType(LidarType::ROBOSENSE);
+        LOG(INFO) << "Using RoboSense Lidar";
+    }
+    else {
         LOG(WARNING) << "unknown lidar_type";
         return false;
     }
@@ -257,6 +262,7 @@ void LaserMapping::SubAndPubToROS(ros::NodeHandle &nh) {
     pub_laser_cloud_body_ = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered_body", 100000);
     pub_laser_cloud_effect_world_ = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered_effect_world", 100000);
     pub_odom_aft_mapped_ = nh.advertise<nav_msgs::Odometry>("/Odometry", 100000);
+    pub_comp_time_ = nh.advertise<std_msgs::Float64>("/comp_time", 100000);
     pub_path_ = nh.advertise<nav_msgs::Path>("/path", 100000);
 }
 
@@ -269,7 +275,9 @@ void LaserMapping::Run() {
     if (!SyncPackages()) {
         return;
     }
-
+    this->then_ = ros::Time::now().toSec();
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    start = std::chrono::system_clock::now();
     /// IMU process, kf prediction, undistortion
     p_imu_->Process(measures_, kf_, scan_undistort_);
     if (scan_undistort_->empty() || (scan_undistort_ == nullptr)) {
@@ -322,8 +330,25 @@ void LaserMapping::Run() {
     // update local map
     Timer::Evaluate([&, this]() { MapIncremental(); }, "    Incremental Mapping");
 
+
+
+
+    this->comp_times.push_back(ros::Time::now().toSec() - this->then_);
+    this->avg_comp_time = std::accumulate(this->comp_times.begin(), this->comp_times.end(), 0.0) / this->comp_times.size();
+
+    
+    end = std::chrono::system_clock::now();
+    std::chrono::duration<float> elapsed_seconds = end - start;
+    this->total_frame++;
+    float time_temp = elapsed_seconds.count() * 1000;
+    this->total_time+=time_temp;
+    
+
+    ROS_INFO("current %f average odom estimation time %f ms \n \n",time_temp, this->total_time/this->total_frame);
     LOG(INFO) << "[ mapping ]: In num: " << scan_undistort_->points.size() << " downsamp " << cur_pts
-              << " Map grid num: " << ivox_->NumValidGrids() << " effect num : " << effect_feat_num_;
+              << " Map grid num: " << ivox_->NumValidGrids() << " effect num : " << effect_feat_num_ << std::endl
+              <<"Computation Time :: " << std::setfill(' ') << std::setw(6) << this->comp_times.back()*1000. << " ms    // Avg: " << std::setw(5) << this->avg_comp_time*1000. << std::endl;
+;
 
     // publish or save map pcd
     if (run_in_offline_) {
@@ -336,6 +361,7 @@ void LaserMapping::Run() {
     } else {
         if (pub_odom_aft_mapped_) {
             PublishOdometry(pub_odom_aft_mapped_);
+            PublishCompTime(pub_comp_time_,time_temp);
         }
         if (path_pub_en_ || path_save_en_) {
             PublishPath(pub_path_);
@@ -672,6 +698,13 @@ void LaserMapping::PublishPath(const ros::Publisher pub_path) {
     if (run_in_offline_ == false) {
         pub_path.publish(path_);
     }
+}
+void LaserMapping::PublishCompTime(const ros::Publisher & pubCompTime, float time)
+{
+
+    std_msgs::Float64 time_msg;
+    time_msg.data=time;
+    pubCompTime.publish(time_msg);
 }
 
 void LaserMapping::PublishOdometry(const ros::Publisher &pub_odom_aft_mapped) {

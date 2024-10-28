@@ -287,6 +287,7 @@ void ImuProcess::UndistortPcl(const common::MeasureGroup &meas, esekfom::esekf<s
 void ImuProcess::Process(const common::MeasureGroup &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state,
                          PointCloudType::Ptr cur_pcl_un_) {
     if (meas.imu_.empty()) {
+        LOG(ERROR) << "IMU data is empty!";
         return;
     }
 
